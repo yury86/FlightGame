@@ -1,8 +1,8 @@
 //
 //  GameViewController.swift
-//  FlightGame
+//  FlightGame1
 //
-//  Created by pizza on 09/09/2021.
+//  Created by pizza on 10/09/2021.
 //  Copyright © 2021 yury-projects. All rights reserved.
 //
 
@@ -41,10 +41,11 @@ class GameViewController: UIViewController {
         scene.rootNode.addChildNode(ambientLightNode)
         
         // retrieve the ship node
-        ///let ship = scene.rootNode.childNode(withName: "ship", recursively: true)!
+        let ship = scene.rootNode.childNode(withName: "ship", recursively: true)!
+        ship.position.z = -50
         
         // animate the 3d object
-        ship.runAction(SCNAction.repeatForever(SCNAction.rotateBy(x: 0, y: 2, z: 0, duration: 1)))
+        //ship.runAction(SCNAction.repeatForever(SCNAction.rotateBy(x: 0, y: 2, z: 0, duration: 1)))
         
         // retrieve the SCNView
         let scnView = self.view as! SCNView
