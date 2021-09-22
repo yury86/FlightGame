@@ -1,17 +1,91 @@
 //
 //  GameViewController.swift
-//  FlightGame1
+//  Flight Game
 //
-//  Created by pizza on 10/09/2021.
-//  Copyright © 2021 yury-projects. All rights reserved.
+//  Created by Denis Bystruev on 11.03.2021.
 //
 
-import UIKit
-import QuartzCore
+//import UIKit
+//import QuartzCore
 import SceneKit
 
 class GameViewController: UIViewController {
-
+    
+    // MARK: - Outlets
+    let button = UIButton()
+    
+    // MARK: - Properties
+    var duration: TimeInterval = 5
+    var ship = SCNNode()
+    
+    // MARK: - Methods
+    func addShip(to scene: SCNScene) {
+        // retrieve the ship node
+        ship = scene.rootNode.childNode(withName: "ship", recursively: true)!
+        
+        // correct ship rotation
+        ship.rotation = SCNVector4(0, 0, 0, 1)
+        
+        // Unhide the ship
+        ship.isHidden = false
+        
+        // position the ship
+        let x = Int.random(in: -25 ... 25)
+        let y = Int.random(in: -25 ... 25)
+        let z = -100
+        ship.position = SCNVector3(x, y, z)
+        
+        // set ship orientation
+        ship.look(at: SCNVector3(2 * x, 2 * y, 2 * z))
+        
+        // animate the 3d object
+        ship.runAction(.move(to: SCNVector3(), duration: duration)) {
+            self.ship.isHidden = true
+            DispatchQueue.main.async {
+                self.button.isHidden = false
+            }
+            print(#line, #function, "GAME OVER")
+        }
+    }
+    
+    /// Configures user interface
+    func configureUI() {
+        // Configure button position
+        let height: CGFloat = 100
+        let width = CGFloat(200)
+        let x = view.frame.midX - width / 2
+        let y = view.frame.midY - height / 2
+        button.frame = CGRect(x: x, y: y, width: width, height: height)
+        
+        // Configure button properties
+        button.backgroundColor = .red
+        button.layer.cornerRadius = 15
+        button.setTitle("New Game", for: .normal)
+        button.setTitleColor(.yellow, for: .normal)
+        button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 32)
+        
+        // Hide button
+        button.isHidden = true
+        
+        button.addTarget(self, action: #selector(buttonTapped), for: .touchUpInside)
+        
+        // Add button to the view
+        view.addSubview(button)
+    }
+    
+    @objc func buttonTapped() {
+        button.isHidden = true
+        
+        // Restore duration
+        duration = 5
+        
+        // retrieve the SCNView
+        let scnView = view as! SCNView
+        
+        // add ship to the scene view
+        addShip(to: scnView.scene!)
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -24,7 +98,7 @@ class GameViewController: UIViewController {
         scene.rootNode.addChildNode(cameraNode)
         
         // place the camera
-        cameraNode.position = SCNVector3(x: 0, y: 0, z: 15)
+        //        cameraNode.position = SCNVector3(x: 0, y: 0, z: 15)
         
         // create and add a light to the scene
         let lightNode = SCNNode()
@@ -40,12 +114,8 @@ class GameViewController: UIViewController {
         ambientLightNode.light!.color = UIColor.darkGray
         scene.rootNode.addChildNode(ambientLightNode)
         
-        // retrieve the ship node
-        let ship = scene.rootNode.childNode(withName: "ship", recursively: true)!
-        ship.position.z = -50
-        
-        // animate the 3d object
-        //ship.runAction(SCNAction.repeatForever(SCNAction.rotateBy(x: 0, y: 2, z: 0, duration: 1)))
+        // Add ship to the scene
+        addShip(to: scene)
         
         // retrieve the SCNView
         let scnView = self.view as! SCNView
@@ -54,10 +124,10 @@ class GameViewController: UIViewController {
         scnView.scene = scene
         
         // allows the user to manipulate the camera
-        scnView.allowsCameraControl = true
+        scnView.allowsCameraControl = false
         
         // show statistics such as fps and timing information
-        scnView.showsStatistics = true
+        scnView.showsStatistics = false
         
         // configure the view
         scnView.backgroundColor = UIColor.black
@@ -65,10 +135,12 @@ class GameViewController: UIViewController {
         // add a tap gesture recognizer
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
         scnView.addGestureRecognizer(tapGesture)
+        
+        // Configure user interface
+        configureUI()
     }
     
-    @objc
-    func handleTap(_ gestureRecognize: UIGestureRecognizer) {
+    @objc func handleTap(_ gestureRecognize: UIGestureRecognizer) {
         // retrieve the SCNView
         let scnView = self.view as! SCNView
         
@@ -77,6 +149,9 @@ class GameViewController: UIViewController {
         let hitResults = scnView.hitTest(p, options: [:])
         // check that we clicked on at least one object
         if hitResults.count > 0 {
+            // Remove animation from the ship
+            ship.removeAllActions()
+            
             // retrieved the first clicked object
             let result = hitResults[0]
             
@@ -85,16 +160,13 @@ class GameViewController: UIViewController {
             
             // highlight it
             SCNTransaction.begin()
-            SCNTransaction.animationDuration = 0.5
+            SCNTransaction.animationDuration = 0.25
             
             // on completion - unhighlight
             SCNTransaction.completionBlock = {
-                SCNTransaction.begin()
-                SCNTransaction.animationDuration = 0.5
-                
                 material.emission.contents = UIColor.black
-                
-                SCNTransaction.commit()
+                self.addShip(to: scnView.scene!)
+                self.duration *= 0.9
             }
             
             material.emission.contents = UIColor.red
@@ -103,6 +175,7 @@ class GameViewController: UIViewController {
         }
     }
     
+    // MARK: - Computed Properties
     override var shouldAutorotate: Bool {
         return true
     }
@@ -118,5 +191,5 @@ class GameViewController: UIViewController {
             return .all
         }
     }
-
+    
 }
